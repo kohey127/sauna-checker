@@ -10,18 +10,22 @@ interface AvailableSlot {
 
 function sortSlotsByDateTime(slots: AvailableSlot[]): AvailableSlot[] {
   const year = new Date().getFullYear();
+  const formatDate = (date: string) => {
+    const removedWeekDay = date.replace(/\(.+\)/, '').trim();
+    return removedWeekDay.replace(/\//g, '-');
+  };
   return slots.sort((a, b) => {
-    const dateA = new Date(`${year}-${a.date}T${a.time}`);
-    const dateB = new Date(`${year}-${b.date}T${b.time}`);
+    const dateA = new Date(`${year}-${formatDate(a.date)}T${a.time}`);
+    const dateB = new Date(`${year}-${formatDate(b.date)}T${b.time}`);
 
     return dateA.getTime() - dateB.getTime();
   });
 }
 
 async function searchAvailabilityInfo(): Promise<AvailableSlot[]> {
-  dotenv.config({ path: '.env.local' });
   const browser = await puppeteer.launch({
     headless: true,
+    // headless: false,
     // devtools: true,
     // defaultViewport: null,
   });
@@ -31,9 +35,9 @@ async function searchAvailabilityInfo(): Promise<AvailableSlot[]> {
     throw new Error('URL is not defined.');
   }
   await page.goto(url);
-  // await page.screenshot({ path: 'example.png' });
+  // await page.screenshot({ path: 'screenshot.png' });
 
-  // page.setDefaultTimeout(0);
+  page.setDefaultTimeout(0);
 
   const availabilityInfo = await page.evaluate(() => {
     const availableSlots: AvailableSlot[] = [];
@@ -89,6 +93,7 @@ async function searchAvailabilityInfo(): Promise<AvailableSlot[]> {
 }
 
 async function sendLineNotification(): Promise<void> {
+  dotenv.config({ path: '.env.local' });
   const info = await searchAvailabilityInfo();
   if (info.length) {
     const LINE_NOTIFY_API = process.env.LINE_NOTIFY_API || '';
@@ -102,7 +107,7 @@ async function sendLineNotification(): Promise<void> {
 
     await axios.post(
       LINE_NOTIFY_API,
-      `message=北欧サウナが空いたよ！\n\n${message}`,
+      `message=北欧サウナが空いたよ！\n\n${message}\n\n▼予約はこちらから\n${process.env.PAGE_URL}`,
       {
         headers: {
           Authorization: `Bearer ${LINE_NOTIFY_TOKEN}`,
