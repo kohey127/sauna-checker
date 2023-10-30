@@ -12,7 +12,8 @@ function sortSlotsByDateTime(slots: AvailableSlot[]): AvailableSlot[] {
   const year = new Date().getFullYear();
   const formatDate = (date: string) => {
     const removedWeekDay = date.replace(/\(.+\)/, '').trim();
-    return removedWeekDay.replace(/\//g, '-');
+    const [month, day] = removedWeekDay.split('/');
+    return `${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
   };
   return slots.sort((a, b) => {
     const dateA = new Date(`${year}-${formatDate(a.date)}T${a.time}`);
